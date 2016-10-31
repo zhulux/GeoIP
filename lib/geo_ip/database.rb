@@ -15,7 +15,9 @@ module GeoIP
     end
 
     def read(_offset, length)
-      IO.read(DB_PATH, length, @offset + _offset - 1024)
+      IO.read(DB_PATH, length, @offset + _offset - 1024).split("\t").map do |str|
+        str.encode('UTF-8', 'UTF-8')
+      end
     end
 
     private

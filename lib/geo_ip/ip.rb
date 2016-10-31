@@ -1,6 +1,6 @@
 module GeoIP
   require 'ipaddr'
-  require 'pry'
+  require 'geo_ip/database'
   class IP
     attr_reader :ip
 
@@ -30,9 +30,7 @@ module GeoIP
         end
         start += 8
       end
-      @result = Database.instance.read(index_offset, index_length).split("\t").map do |str|
-        str.encode('UTF-8', 'UTF-8')
-      end
+      @result = Database.instance.read(index_offset, index_length)
       return nil unless @result
       {
         country: @result[0],
