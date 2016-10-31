@@ -1,8 +1,6 @@
-require 'ipaddr'
-require 'pry'
 module GeoIP
-  DB_PATH = File.expand_path '../../data/ip.dat', __FILE__
-  OFFSET_HEAD_LENGTH = 4
+  require 'ipaddr'
+  require 'pry'
   class IP
     attr_reader :ip
 
@@ -18,31 +16,22 @@ module GeoIP
       @packed_ip ||= [ip.to_i].pack 'N'
     end
 
-    def index(file, offset, length=1)
-      file.seek(OFFSET_HEAD_LENGTH + offset)
-      file.read(length)
-    end
 
     def location
-
-      File.open(DB_PATH,'rb') do |file|
-        offset = file.read(OFFSET_HEAD_LENGTH).unpack('Nlen')[0]
-        max_comp_length = offset - 1024 - 4
-        tmp_offset = numbers[0] * 4
-        start = index(file, tmp_offset, 4).unpack('V')[0] * 8 + 1024
-        index_offset = nil
-        index_length = nil
-        while start < max_comp_length
-          if index(file, start, 4) >= packed_ip
-            index_offset = "#{index(file, start + 4, 3)}\x0".unpack("V")[0]
-            index_length = index(file, start + 7).unpack("C")[0]
-            break
-          end
-          start += 8
+      tmp_offset = numbers[0] * 4
+      start = Database.instance.index[tmp_offset..(tmp_offset+3)].unpack('V')[0] * 8 + 1024
+      index_offset = nil
+      index_length = nil
+      while start < Database.instance.max_comp_length
+        if Database.instance.index[start..(start+3)] >= packed_ip
+          index_offset = "#{Database.instance.index[(start+4)..(start+6)]}\x0".unpack("V")[0]
+          index_length = Database.instance.index[(start+7)].unpack("C")[0]
+          break
         end
-        @result = index(file, offset + index_offset - 1024 - 4, index_length).split("\t").map do |str|
-          str.encode("UTF-8", "UTF-8")
-        end
+        start += 8
+      end
+      @result = Database.instance.read(index_offset, index_length).split("\t").map do |str|
+        str.encode('UTF-8', 'UTF-8')
       end
       return nil unless @result
       {

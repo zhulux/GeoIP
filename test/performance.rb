@@ -4,8 +4,7 @@ require 'geo_ip'
   RubyProf.measure_mode = measure
   RubyProf.start
   2000.times do
-    phone = Random.rand(10000000..100000000)
-    GeoIP.location("138#{phone}")
+    GeoIP.location(Array.new(4) { rand(256) }.join('.'))
   end
   result = RubyProf.stop
   printer = RubyProf::FlatPrinter.new(result)
